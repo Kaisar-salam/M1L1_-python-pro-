@@ -1,0 +1,55 @@
+import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+
+
+bot = telebot.TeleBot("")
+
+keys = list("1234567890qwertyuiopasdfghjklzxcvbnm")
+symbols = list("1234567890!@#$%^&*()'\"/\\,.;:")
+
+def gen_inline_markup():
+    markup = InlineKeyboardMarkup()
+    markup.row_width = 2
+    markup.add(
+        InlineKeyboardButton("Normal", callback_data="cb_Normal"),
+        InlineKeyboardButton("Symbols", callback_data="cb_Symbols"),
+        InlineKeyboardButton("Caps Lock", callback_data="cb_Caps")
+    )
+    return markup
+
+def gen_keyboard(key_type="Normal"):
+    markup = ReplyKeyboardMarkup(row_width=10, resize_keyboard=True)
+    key_list = symbols if key_type == "Symbols" else [x.upper() for x in keys] if key_type == "Caps" else keys
+    
+    for i in range(0, len(key_list), 10):
+        markup.add(*[KeyboardButton(x) for x in key_list[i:i+10]])
+    
+    markup.add(
+        KeyboardButton("Normal"), 
+        KeyboardButton("Symbols"), 
+        KeyboardButton("Caps Lock"),
+        KeyboardButton("✅ Done")
+    )
+    return markup
+
+@bot.message_handler(commands=["start"])
+def start_message(message):
+    bot.send_message(message.chat.id, "Choose a keyboard type:", reply_markup=gen_inline_markup())
+
+@bot.callback_query_handler(func=lambda call: call.data in ["cb_Normal", "cb_Symbols", "cb_Caps"])
+def callback_query(call):
+    key_type = "Normal" if call.data == "cb_Normal" else "Symbols" if call.data == "cb_Symbols" else "Caps"
+    bot.send_message(call.message.chat.id, f"Switched to {key_type} keyboard", reply_markup=gen_keyboard(key_type))
+
+@bot.message_handler(func=lambda message: True)
+def all_messages(message):
+    if message.text == "✅ Done":
+        bot.send_message(message.chat.id, "Done with Keyboard", reply_markup=telebot.types.ReplyKeyboardRemove())
+    elif message.text in ["Symbols", "Normal", "Caps Lock"]:
+        bot.send_message(message.chat.id, f"Switched to {message.text} keyboard", reply_markup=gen_keyboard(message.text))
+    elif message.text == "🔙Delete":
+        bot.delete_message(message.chat.id, message.message_id)
+    else:
+        bot.send_message(message.chat.id, message.text)
+
+bot.infinity_polling()
