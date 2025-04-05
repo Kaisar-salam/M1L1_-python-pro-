@@ -1,0 +1,49 @@
+import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+import random
+
+
+bot = telebot.TeleBot("")
+
+def gen_markup():
+    markup = InlineKeyboardMarkup()
+    markup.row_width = 2
+    markup.add(InlineKeyboardButton("Сделать вещь", callback_data="cb_yes"),
+    InlineKeyboardButton("Найти проблему", callback_data="cb_no"))
+    return markup
+@bot.message_handler(commands=['facts'])
+def command(message):
+    fact_list = ['Планета нагревается беспрецедентными темпами: 2023 год стал самым жарким за 125 тысяч лет. Концентрация CO₂ в атмосфере уже на 50% выше, чем до начала промышленной революции. Это приводит к экстремальным погодным явлениям, таянию ледников и угрозе затопления прибрежных городов.', 
+                 '91% всего произведенного пластика не перерабатывается, а попадает на свалки и в океаны. К 2050 году масса пластика в морях превысит вес всей рыбы. Микропластик уже обнаружен в крови человека и даже в грудном молоке.', 
+                 '9 из 10 человек дышат воздухом, уровень загрязнения которого превышает нормы ВОЗ. Ежегодно это приводит к 7 млн преждевременных смертей — в два раза больше, чем погибает в ДТП по всему миру.',
+                 '2.2 млрд людей не имеют доступа к чистой воде, а 90% сточных вод в развивающихся странах сбрасываются без очистки. К 2040 году дефицит воды может затронуть 40% населения Земли.']
+    bot.send_message(message.chat.id, random.choice(fact_list))
+
+@bot.message_handler(commands=['start'], func=lambda message: True)
+def message_handler(message):
+    bot.send_message(message.chat.id, "Выбери один из них", reply_markup=gen_markup())
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_query(call):
+    if call.data == "cb_yes":
+        bot.answer_callback_query(call.id, "напиши свой материал")
+        
+    elif call.data == "cb_no":
+        bot.answer_callback_query(call.id, "напиши 'facts'")
+
+
+
+    
+@bot.message_handler(commands=['plastic'])
+def start_command(message):
+    bot.send_message(message.chat.id, "Машинки из бутылок + крышки-колеса, Осьминог из донышка бутылки (разрезать на полоски-щупальца), Кегли для боулинга (наполненные песком бутылки)")
+
+@bot.message_handler(commands=['wood'])
+def start_command(message):
+    bot.send_message(message.chat.id, "Деревянный пазл (выпилить лобзиком), Кукольный домик (из фанеры и палочек), Поезд с вагончиками (скрепить колесами из крышек)")
+
+@bot.message_handler(commands=['paper'])
+def start_command(message):
+    bot.send_message(message.chat.id, "Картонный замок (коробки + краски), Воздушный змей (каркас из палочек + обклеить бумагой), Бумажные куклы с одеждой (распечатать шаблоны)")
+
+bot.infinity_polling()
